@@ -1,6 +1,7 @@
 // maze_generator.c
 // Author: Medine Merve Maral
 
+#include "maze_generator.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
