@@ -9,12 +9,6 @@
 #define WALL 1
 #define PATH 0
 
-typedef struct
-{
-    int edge_x, edge_y; // edge_x and edge_y represent the coordinates of the edge point
-    int in_x, in_y;     // in_x and in_y represent the coordinates of the cell just inside the maze from the edge point
-} Point;
-
 Point get_random_edge_point(int n)
 {
     Point p;
