@@ -1,0 +1,8 @@
+#macOS system file
+.DS_Store
+# Compiled executable file
+maze
+# gprof output file generated after running the program
+gmon.out
+#Text report generated from gprof analysis
+analysis.txt
