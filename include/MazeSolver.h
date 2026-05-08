@@ -36,17 +36,19 @@ private:
     int startX, startY;
     int endX, endY;
 
-    //direction arrays: right, left, down, up
+    //direction arrays: right, left, down, up   Medine: 0: up, 1: down, 2: left, 3: right in generator.
     int dx[4];
     int dy[4];
     
     //Maze Generation: Medine Merve
     //generates maze using recursive backtacking algorithm
+    // Medine: Difference? Instead of these, use generateMaze(filename, n)
     void generateMaze();
     void generateRecursive(int x, int y);
 
     //Sequential Solving: Medine Merve
     //solves maze using sequential DFS
+    // Medine: One function,solveWithSequentialDfs.
     bool solveSequential();
     bool dfs(int x, int y);
     
