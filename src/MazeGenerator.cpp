@@ -41,12 +41,6 @@ Point getRandomEdgePoint(int n)
     return p;
 }
 
-
-
-
-
-
-
 // shuffle function to randomize the directions
 void shuffle(int *array, int n)
 {
@@ -58,11 +52,6 @@ void shuffle(int *array, int n)
         array[i] = t;
     }
 }
-
-
-
-
-
 
 
 // generate maze paths using recursive backtracking DFS algorithm 
@@ -105,11 +94,6 @@ void generatePaths(int **matrix, int x, int y, int n)
 }
 
 
-
-
-
-
-
 // save maze to file in the specified format (.txt)
 void saveMazeToFile(int **matrix, int n, Point start, Point end, const char *filename)
 {
@@ -135,11 +119,6 @@ void saveMazeToFile(int **matrix, int n, Point start, Point end, const char *fil
 
     fclose(file);
 }
-
-
-
-
-
 
 
 //  main function to generate maze with an entrance and exit and save it to file
@@ -184,12 +163,6 @@ void generateMaze(int n, const char *filename)
 }
 
 
-
-
-
-
-
-
 void getMazeSizeFromFile(const char *filename, int &n) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -205,11 +178,6 @@ void getMazeSizeFromFile(const char *filename, int &n) {
 
     file.close();
 }
-
-
-
-
-
 
 
 
@@ -233,12 +201,6 @@ void getStartIndicesFromFile(const char *filename, int &start_x, int &start_y) {
 }
 
 
-
-
-
-
-
-
 void getEndIndicesFromFile(const char *filename, int &end_x, int &end_y) {
     std::ifstream file(filename);
     
@@ -258,10 +220,6 @@ void getEndIndicesFromFile(const char *filename, int &end_x, int &end_y) {
 
     file.close();
 }
-
-
-
-
 
 
 void getMazeFromFile(const char *filename, int **matrix, int n)
@@ -290,11 +248,6 @@ void getMazeFromFile(const char *filename, int **matrix, int n)
 
 
 
-
-
-
-
-
 void printMaze(const char *filename, int n)
 {
     int **matrix = new int *[n];
@@ -320,11 +273,6 @@ void printMaze(const char *filename, int n)
     }
     delete[] matrix;
 }
-
-
-
-
-
 
 
 
