@@ -37,6 +37,7 @@ private:
     int endX, endY;
 
     //direction arrays: right, left, down, up   Medine: 0: up, 1: down, 2: left, 3: right in generator.
+    //parallel candidates functions is going to be r, l, d, u.
     int dx[4];
     int dy[4];
     
