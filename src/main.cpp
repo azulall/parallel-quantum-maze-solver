@@ -19,7 +19,7 @@ int main() {
     const char* seqSolutionFile = "solution_seq.txt";
     
     cout << "========================================================\n";
-    cout << "    TEKNOFEST KUANTUM ESINLI PARALEL LABIRENT COZUCU    \n";
+    cout << "    KUANTUM ESINLI PARALEL LABIRENT COZUCU    \n";
     cout << "========================================================\n\n";
 
     // 2. Labirent Üretimi (MazeGenerator)
