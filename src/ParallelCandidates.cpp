@@ -1,92 +1,65 @@
+#include "MazeSolver.h"
 #include <vector>
-#include "ParallelCandidates.h"
 
+// Finds valid neighboring cells that can be explored from position (x, y)
+// Returns them as SearchNode objects with incremented depth
+// x = column, y = row
+std::vector<SearchNode> MazeSolver::getParallelCandidates(int x, int y, int depth) {
+    std::vector<SearchNode> candidates;
 
-MazeManager mazeManager;
-char* filename;
-
-int dx[] = {0, 0, -1, 1}; // right, left, down, up
-int dy[] = {-1, 1, 0, 0};
-
-
-void initializeMaze(char* mazeFileName) {
-    filename = mazeFileName;
-    mazeManager.getMazeSizeFromFile(filename, n);
-    mazeManager.getStartIndicesFromFile(filename, start_x, start_y);
-    mazeManager.getEndIndicesFromFile(filename, end_x, end_y);
-    mazeManager.getMazeFromFile(filename, maze, n);   
-}
-
-
-
-
-
-bool isValid(std::vector<std::vector<int>>& maze, int x, int y) {
-    return x >= 0 && x < maze.size() && y >= 0 && y < maze[0].size() && maze[x][y] == 0;
-}
-
-
-
-
-
-
-std::vector<SearchNode> getParallelCandidates(std::vector<std::vector<int>>& maze, int x, int y, int depth) {
-   std::vector<SearchNode> candidates;
-   
     for (int i = 0; i < 4; i++) {
         int nx = x + dx[i];
         int ny = y + dy[i];
-        
-        if (isValid(maze, nx, ny)) {
-            SearchNode node = {nx, ny, depth + 1};
+
+        if (isValid(nx, ny)) {
+            SearchNode node;
+            node.x = nx;
+            node.y = ny;
+            node.depth = depth + 1;
             candidates.push_back(node);
         }
     }
+
     return candidates;
 }
 
-
-
-
-
-
-std::vector<SearchNode> createInitialFrontier(std::vector<std::vector<int>>& maze,int maxDepth) {
+// Creates an initial frontier of search nodes using BFS from the start
+// Expands up to maxDepth levels to distribute early work among threads
+std::vector<SearchNode> MazeSolver::createInitialFrontier(int maxDepth) {
     std::vector<SearchNode> frontier;
     std::vector<SearchNode> queue;
-    std::vector<std::vector<bool>> visited(maze.size(), std::vector<bool>(maze[0].size(), false));
-     
-    queue.push_back({start_x, start_y, 0});
-    visited[start_x][start_y] = true;
+    std::vector<std::vector<bool>> bfsVisited(rows, std::vector<bool>(cols, false));
+
+    queue.push_back({startX, startY, 0});
+    bfsVisited[startY][startX] = true;
 
     int head = 0;
-    while (head < queue.size()) {
+    while (head < (int)queue.size()) {
         SearchNode current = queue[head++];
-        
+
+        // Nodes at max depth become the frontier for parallel tasks
         if (current.depth >= maxDepth) {
             frontier.push_back(current);
             continue;
         }
-        
+
         for (int i = 0; i < 4; i++) {
             int nx = current.x + dx[i];
             int ny = current.y + dy[i];
-            
-            if (isValid(maze, nx, ny) && !visited[nx][ny]) {
-                visited[nx][ny] = true;
+
+            if (isInside(nx, ny) && maze[ny][nx] != 1 && !bfsVisited[ny][nx]) {
+                bfsVisited[ny][nx] = true;
                 queue.push_back({nx, ny, current.depth + 1});
             }
         }
-        
     }
-    
+
     return frontier;
 }
 
-
-
-
-
-
-bool shouldCreateTask(int depth) {
-    return depth > DEPTH_LIMIT;
+// Decides whether a new OpenMP task should be created at this depth
+// Tasks are created at SHALLOW depths to enable parallelism
+// At deeper levels, search continues sequentially to avoid overhead
+bool MazeSolver::shouldCreateTask(int depth) {
+    return depth < TASK_DEPTH_LIMIT;
 }

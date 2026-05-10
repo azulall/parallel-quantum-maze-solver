@@ -1,35 +1,64 @@
 #include "SequentialDfsSolver.h"
 #include "MazeManager.h"
+#include <stack>
 
+// Iterative DFS path finder using explicit stack
+// Avoids stack overflow on large mazes (1001x1001)
 bool SequentialDfsSolver::followPath(std::vector<std::vector<int>> &maze, std::vector<std::vector<int>> &solution, int x, int y, int end_x, int end_y)
 {
-    if (x < 0 || x >= maze[0].size() || y < 0 || y >= maze.size() || maze[y][x] == WALL || solution[y][x] == 8)
-    {
+    int rows = (int)maze.size();
+    int cols = (rows > 0) ? (int)maze[0].size() : 0;
+
+    // Direction arrays: right, left, down, up
+    int ddx[] = {1, -1, 0, 0};
+    int ddy[] = {0, 0, 1, -1};
+
+    // Stack frame: x, y, direction index
+    struct Frame {
+        int x, y;
+        int dirIdx;
+    };
+
+    std::stack<Frame> callStack;
+
+    // Check if start is valid
+    if (x < 0 || x >= cols || y < 0 || y >= rows || maze[y][x] == WALL) {
         return false;
     }
 
-    solution[y][x] = 8; 
+    solution[y][x] = 8; // Mark as visited
+    callStack.push({x, y, 0});
 
-    if (x == end_x && y == end_y)
-    {
-        printf("Reached the end point at (%d, %d)\n", x, y);
-        return true;
-    }
-    
-    if (followPath(maze, solution, x + 1, y, end_x, end_y) || 
-        followPath(maze, solution, x - 1, y, end_x, end_y) ||
-        followPath(maze, solution, x, y + 1, end_x, end_y) || 
-        followPath(maze, solution, x, y - 1, end_x, end_y))
-    {
-        return true;
+    while (!callStack.empty()) {
+        Frame &cur = callStack.top();
+
+        // Check if we reached the end
+        if (cur.x == end_x && cur.y == end_y) {
+            printf("Reached the end point at (%d, %d)\n", cur.x, cur.y);
+            return true;
+        }
+
+        if (cur.dirIdx >= 4) {
+            // All directions tried, backtrack
+            solution[cur.y][cur.x] = 0;
+            callStack.pop();
+            continue;
+        }
+
+        int nx = cur.x + ddx[cur.dirIdx];
+        int ny = cur.y + ddy[cur.dirIdx];
+        cur.dirIdx++;
+
+        // Check if next cell is valid
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows
+            && maze[ny][nx] != WALL && solution[ny][nx] != 8) {
+            solution[ny][nx] = 8;
+            callStack.push({nx, ny, 0});
+        }
     }
 
-    solution[y][x] = 0; // Backtrack
     return false;
 }
-
-
-
 
 void SequentialDfsSolver::solveMazeWithSeqDfs(const char *mazeFile, const char *solutionFile)
 {
@@ -51,7 +80,6 @@ void SequentialDfsSolver::solveMazeWithSeqDfs(const char *mazeFile, const char *
 
     std::vector<std::vector<int>> solution = maze;
 
-    
     if (followPath(maze, solution, start_x, start_y, end_x, end_y))
     {
         std::cout << "Path found from start to end." << std::endl;
@@ -62,13 +90,10 @@ void SequentialDfsSolver::solveMazeWithSeqDfs(const char *mazeFile, const char *
     manager.saveMazeToFile(solution, n, start_x, start_y, end_x, end_y, solutionFile);
 }
 
-
-
 void SequentialDfsSolver::printSolution(const char *filename)
 {
     MazeManager manager;
     int n;
     manager.getMazeSizeFromFile(filename, n);
     manager.printMaze(filename, n);
-
 }

@@ -3,106 +3,71 @@
 
 #include <vector>
 
-//represents a candidate cell used in parallel search
-struct SearchNode{
-    int x;
-    int y;
-    int depth; //for control task creation in OpenMP
+// Represents a candidate cell used in parallel search
+struct SearchNode {
+    int x;      // column index
+    int y;      // row index
+    int depth;  // current search depth for task creation control
 };
 
-class MazeSolver{
+class MazeSolver {
 public:
-    //constructor
+    // Constructor: sets up maze grid dimensions
     MazeSolver(int r, int c);
 
-    //controls main workflow of the maze solver
+    // Loads external maze data into the solver
+    // sx, sy: start column and row; ex, ey: end column and row
+    void loadMaze(const std::vector<std::vector<int>>& mazeData,
+                  int sx, int sy, int ex, int ey);
+
+    // Main workflow controller
     void run();
-    //prints the maze to the console
+    // Prints the maze grid to console
     void printMaze();
 
+    // Parallel solver entry point using OpenMP (Zulal)
+    bool solveParallel();
 
 private:
-    //dimension of the maze
+    // Maze dimensions
     int rows, cols;
 
-    //2D maze representation
-    // 1 = wall, 0 = path, 2 = solution path
+    // 2D maze grid: 1 = wall, 0 = path, 2 = solution path
     std::vector<std::vector<int>> maze;
 
-    //keeps track of visited cells during DFS to avoid revisiting
-    std::vector<std::vector<bool>> visited;
-    
-    //start and end points
+    // Flat visited array for atomic operations in parallel search
+    // Index formula: y * cols + x (row * cols + col)
+    std::vector<int> visited;
+
+    // Start and end coordinates (x = column, y = row)
     int startX, startY;
     int endX, endY;
 
-    //direction arrays: right, left, down, up   Medine: 0: up, 1: down, 2: left, 3: right in generator.
-    //parallel candidates functions is going to be r, l, d, u.
+    // Direction arrays for neighbor exploration
     int dx[4];
     int dy[4];
-    
-    //Maze Generation: Medine Merve
-    //generates maze using recursive backtacking algorithm
-    // Medine: Difference? Instead of these, use generateMaze(filename, n)
-    void generateMaze();
-    void generateRecursive(int x, int y);
 
-    //Sequential Solving: Medine Merve
-    //solves maze using sequential DFS
-    // Medine: One function,solveWithSequentialDfs.
-    bool solveSequential();
-    bool dfs(int x, int y);
-    
-    //maybe we will implement BFS -Optional-
-    //bool solveBFS();
+    // Maximum depth for creating new OpenMP tasks
+    static const int TASK_DEPTH_LIMIT = 6;
 
-    //Parallel Candidate Preparation: Medine
-    //Finds valid neighboring cells that can be explored from the current cell
-    //Returns them as SearchNode objects with updated depth information
+    // Parallel Candidate Preparation (Medine)
     std::vector<SearchNode> getParallelCandidates(int x, int y, int depth);
-    
-    //Creates an initial set of search nodes near the start position
-    //This can help distribute early search work among parallel tasks
     std::vector<SearchNode> createInitialFrontier(int maxDepth);
-    
-    //Decides whether a new OpenMP task should be created at the given depth
-    //This prevents excessive task creation in deep recursion
     bool shouldCreateTask(int depth);
 
-    //Parallel Solver: Zülal
-    //solves maze using OpenMP
-    bool solveParallel();
-    
-    //explores multiple paths simultaneously
+    // Parallel DFS engine (Zulal)
     bool parallelDFS(int x, int y, bool& found, int depth);
-    
-    //Safely checks and marks a cell as visited in the parallel search
-    //Prevents multiple threads from visiting the same cell at the same time
     bool tryVisitCell(int x, int y);
-    
-    
-    //Quantum Inspired Logic: Kübra
-    
-    //Calculates a quantum-inspired weight for a candidate node
-    //Nodes closer to the exit receive higher priority
+
+    // Quantum-Inspired Ordering (Kubra)
     double calculateWeight(const SearchNode& node);
-    
-    //Sorts candidate nodes according to their calculated weights
-    //More promising paths are placed earlier in the list
     std::vector<SearchNode> orderCandidatesByWeight(std::vector<SearchNode> candidates);
 
-    //Helper Functions
-    //checks if coordinates are inside the maze
+    // Helper functions
     bool isInside(int x, int y);
-    //checks if cell is valid for movement(inside, not wall, not visited)
     bool isValid(int x, int y);
-    //resets visited array for another search
     void resetVisited();
-    
-    //clears the previously marked solution path before running another solver
     void clearSolution();
-
 };
-
 
 #endif

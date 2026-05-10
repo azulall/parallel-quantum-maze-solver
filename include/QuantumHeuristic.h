@@ -5,34 +5,37 @@
 #include <cmath>
 #include <algorithm>
 
-// Çözücü için basit bir koordinat yapısı
+// Simple coordinate structure for the solver
 struct Point2D {
-    int x;
-    int y;
-    
+    int x;  // column
+    int y;  // row
+
     bool operator==(const Point2D& other) const {
         return x == other.x && y == other.y;
     }
 };
 
-// Yön ve o yöne ait kuantum ağırlığını tutacak yapı
+// Candidate path with its quantum-inspired amplitude weight
 struct CandidatePath {
     Point2D pos;
     double amplitudeWeight;
 
-    // Ağırlığı yüksek olanın (hedefe gitme ihtimali yüksek olanın) başa gelmesi için sıralama operatörü
+    // Higher weight = closer to exit = explored first
     bool operator<(const CandidatePath& other) const {
-        return amplitudeWeight > other.amplitudeWeight; 
+        return amplitudeWeight > other.amplitudeWeight;
     }
 };
 
 class QuantumHeuristic {
 public:
-    // İki nokta arasındaki kuantum esinli ağırlığı hesaplar
-    static double calculateAmplitudeWeight(Point2D nextPos, Point2D targetPos, double alpha = 0.5);
+    // Calculates quantum-inspired amplitude weight between two points
+    // Uses inverse sqrt of Manhattan distance (Grover's amplification idea)
+    static double calculateAmplitudeWeight(Point2D nextPos, Point2D targetPos);
 
-    // Bulunulan noktadan gidilebilecek GÜVENLİ yolları ağırlıklarına göre sıralayıp döndürür
-    static std::vector<Point2D> getWeightedCandidates(const std::vector<std::vector<int>>& matrix, Point2D current, Point2D target, int PATH_VALUE);
+    // Returns valid neighbor positions sorted by quantum weight (best first)
+    static std::vector<Point2D> getWeightedCandidates(
+        const std::vector<std::vector<int>>& matrix,
+        Point2D current, Point2D target, int PATH_VALUE);
 };
 
 #endif
