@@ -1,37 +1,22 @@
-/**
- * @file QuantumHeuristic.cpp
- * @author Hatice Kubra
- * @brief Phase 3: Quantum Intelligence - Amplitude Amplification Logic
- * 
- * Bu dosya, labirent cozumunde kaba kuvvet (brute-force) yerine 
- * kuantum esintili genlik artirma (amplitude amplification) yontemini kullanarak
- * yollari agirliklandirir ve entropiyi dusurerek cozumu hizlandirir.
- */
-
 #include "QuantumHeuristic.h"
 #include <cmath>
 #include <algorithm>
 
-// ---------------------------------------------------------
-// Kurucu Fonksiyon (Constructor)
+
 // Labirentin çıkış (hedef) koordinatlarını sisteme tanıtır.
-// ---------------------------------------------------------
 QuantumHeuristic::QuantumHeuristic(int targetX, int targetY) 
     : exitX(targetX), exitY(targetY) {}
 
-// ---------------------------------------------------------
 // Sezgisel Rehberlik (Heuristic Guidance)
 // Manhattan mesafesi kullanarak hedefe olan uzaklığı ölçer.
-// ---------------------------------------------------------
 double QuantumHeuristic::calculateManhattan(int currentX, int currentY) const {
     // Formül: |x1 - x2| + |y1 - y2|
     return std::abs(currentX - exitX) + std::abs(currentY - exitY);
 }
 
-// ---------------------------------------------------------
+
 // Kuantum Genlik (Amplitude) Hesaplama
 // Kuantum dalga fonksiyonundan ilham alınarak mesafeyi bir genliğe çevirir.
-// ---------------------------------------------------------
 double QuantumHeuristic::calculateAmplitude(int x, int y) const {
     double distance = calculateManhattan(x, y);
     
