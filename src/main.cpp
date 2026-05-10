@@ -2,89 +2,87 @@
 #include <chrono>
 #include <vector>
 
-// Takımın yazdığı tüm modüller
+// All project modules
 #include "MazeGenerator.h"
 #include "MazeManager.h"
 #include "SequentialDfsSolver.h"
-#include "MazeSolver.h" // Zülal'in paralel çözücüsü
+#include "MazeSolver.h"
 
 using namespace std;
 using namespace std::chrono;
 
-int main() {
-    // 1. Ayarlar ve Labirent Boyutu
-    // Farkı net görebilmek için labirenti büyük tutmak önemlidir (örn: 1001x1001)
-    int n = 1001; 
+int main(int argc, char* argv[]) {
+    // Maze size can be passed as command line argument (must be odd)
+    // Default is 1001 for good speedup demonstration
+    int n = 1001;
+    if (argc > 1) {
+        n = atoi(argv[1]);
+        if (n % 2 == 0) n++; // maze size must be odd for proper generation
+    }
     const char* mazeFile = "maze_test.txt";
     const char* seqSolutionFile = "solution_seq.txt";
-    
+
     cout << "========================================================\n";
-    cout << "    KUANTUM ESINLI PARALEL LABIRENT COZUCU    \n";
+    cout << "    QUANTUM-INSPIRED PARALLEL MAZE SOLVER    \n";
     cout << "========================================================\n\n";
 
-    // 2. Labirent Üretimi (MazeGenerator)
-    cout << "[1/4] Labirent uretiliyor (" << n << "x" << n << ")...\n";
+    // Step 1: Generate the maze using recursive backtracking
+    cout << "[1/4] Generating maze (" << n << "x" << n << ")...\n";
     MazeGenerator generator;
     generator.generateMaze(n, mazeFile);
-    cout << "      Labirent basariyla '" << mazeFile << "' dosyasina kaydedildi.\n\n";
+    cout << "      Maze saved to '" << mazeFile << "'\n\n";
 
-    // 3. Klasik DFS (Sequential) Çözümü ve Süre Ölçümü
-    cout << "[2/4] Klasik Ardisil (Sequential) DFS calistiriliyor...\n";
+    // Step 2: Solve with sequential DFS (baseline measurement)
+    cout << "[2/4] Running Sequential DFS (baseline)...\n";
     SequentialDfsSolver seqSolver;
-    
-    // Kronometreyi başlat
+
     auto start_seq = high_resolution_clock::now();
     seqSolver.solveMazeWithSeqDfs(mazeFile, seqSolutionFile);
-    auto end_seq = high_resolution_clock::now(); // Kronometreyi durdur
-    
-    duration<double, std::milli> seq_time = end_seq - start_seq;
-    cout << "      Klasik DFS Tamamlandi! Sure: " << seq_time.count() << " ms\n\n";
+    auto end_seq = high_resolution_clock::now();
 
-    // 4. Paralel Motor İçin Dosyadan Verileri Okuma (MazeManager)
-    cout << "[3/4] Paralel motor icin labirent verileri yukleniyor...\n";
+    duration<double, std::milli> seq_time = end_seq - start_seq;
+    cout << "      Sequential DFS completed! Time: " << seq_time.count() << " ms\n\n";
+
+    // Step 3: Load maze data for the parallel solver
+    cout << "[3/4] Loading maze data for parallel engine...\n";
     MazeManager manager;
-    int size_n, startX, startY, endX, endY;
+    int size_n, sx, sy, ex, ey;
     vector<vector<int>> mazeMatrix;
-    
+
     manager.getMazeSizeFromFile(mazeFile, size_n);
-    manager.getStartIndicesFromFile(mazeFile, startX, startY);
-    manager.getEndIndicesFromFile(mazeFile, endX, endY);
+    manager.getStartIndicesFromFile(mazeFile, sx, sy);
+    manager.getEndIndicesFromFile(mazeFile, ex, ey);
     manager.getMazeFromFile(mazeFile, mazeMatrix, size_n);
 
-    // 5. Kuantum Esinli OpenMP Paralel Çözümü ve Süre Ölçümü
-    cout << "[4/4] Kuantum Esinli OpenMP Paralel Motor calistiriliyor...\n";
-    
-    MazeSolver parSolver(size_n, size_n); 
-    
-    // ENTEGRASYON NOTU: Zülal'in MazeSolver sınıfında bu değişkenler 'public' 
-    // olmalı veya bunları set eden bir fonksiyon (örn: loadMaze) bulunmalıdır.
-    // parSolver.maze = mazeMatrix; 
-    // parSolver.startX = startX; parSolver.startY = startY;
-    // parSolver.endX = endX; parSolver.endY = endY;
+    // Step 4: Solve with quantum-inspired parallel solver
+    cout << "[4/4] Running Quantum-Inspired OpenMP Parallel Solver...\n";
 
-    // Kronometreyi başlat
+    MazeSolver parSolver(size_n, size_n);
+    // Load the maze data: sx = start column, sy = start row (file format)
+    parSolver.loadMaze(mazeMatrix, sx, sy, ex, ey);
+
     auto start_par = high_resolution_clock::now();
-    bool isFound = parSolver.solveParallel(); 
-    auto end_par = high_resolution_clock::now(); // Kronometreyi durdur
-    
+    bool isFound = parSolver.solveParallel();
+    auto end_par = high_resolution_clock::now();
+
     duration<double, std::milli> par_time = end_par - start_par;
-    
+
     if (isFound) {
-        cout << "      Kuantum Paralel Tamamlandi! Sure: " << par_time.count() << " ms\n\n";
+        cout << "      Parallel solver found the path! Time: " << par_time.count() << " ms\n\n";
     } else {
-        cout << "      UYARI: Paralel motor yol bulamadi!\n\n";
+        cout << "      WARNING: Parallel solver could not find a path!\n\n";
     }
 
-    // 6. Sonuç ve Hızlanma (Speedup) Raporu
+    // Performance report
     cout << "========================================================\n";
-    cout << "                   PERFORMANS RAPORU                    \n";
+    cout << "                 PERFORMANCE REPORT                      \n";
     cout << "========================================================\n";
-    cout << " Klasik DFS Suresi     : " << seq_time.count() << " ms\n";
-    cout << " Kuantum Paralel Suresi: " << par_time.count() << " ms\n";
-    
+    cout << " Sequential DFS Time   : " << seq_time.count() << " ms\n";
+    cout << " Parallel Solver Time  : " << par_time.count() << " ms\n";
+
     if (par_time.count() > 0) {
         double speedup = seq_time.count() / par_time.count();
-        cout << " HIZ ARTISI (SPEEDUP)  : " << speedup << " KAT DAHA HIZLI!\n";
+        cout << " SPEEDUP               : " << speedup << "x FASTER\n";
     }
     cout << "========================================================\n";
 

@@ -4,13 +4,15 @@
 
 using namespace std;
 
-//OpenMP-based parallel maze solving 
+// OpenMP-based parallel maze solving entry point
+// Uses task-based parallelism with quantum-inspired path ordering
 bool MazeSolver::solveParallel() {
     resetVisited();
 
     bool found = false;
 
-    cout << "OpenMP parallel solver started." << endl;
+    cout << "OpenMP parallel solver started. Threads: "
+         << omp_get_max_threads() << endl;
 
     #pragma omp parallel
     {
@@ -22,86 +24,80 @@ bool MazeSolver::solveParallel() {
 
     return found;
 }
-//Checks and marks a cell as visited in the parallel search
-//Prevents multiple threads from visiting the same cell at the same time
+
+// Atomically checks and marks a cell as visited
+// Uses atomic capture for lock-free thread safety
+// Returns true if this thread is the first to visit the cell
 bool MazeSolver::tryVisitCell(int x, int y) {
-    if (!isInside(x, y) || maze[x][y] == 1) {
+    if (!isInside(x, y) || maze[y][x] == 1) {
         return false;
     }
 
-    bool canVisit = false;
+    int idx = y * cols + x;
+    int oldVal;
 
-    #pragma omp critical(visited_lock)
+    // Atomic capture: read old value and set to 1 in one operation
+    // This replaces the expensive critical section for much better performance
+    #pragma omp atomic capture
     {
-        if (!visited[x][y]) {
-            visited[x][y] = true;
-            canVisit = true;
-        }
+        oldVal = visited[idx];
+        visited[idx] = 1;
     }
 
-    return canVisit;
+    // If old value was 0, we are the first thread to visit this cell
+    return oldVal == 0;
 }
 
-//Explores multiple paths using OpenMP task-based parallel DFS
+// Parallel DFS: explores maze paths using OpenMP tasks
+// At shallow depths, creates new tasks for each candidate branch
+// At deeper depths, continues sequentially within the current task
+// Quantum-inspired ordering ensures most promising paths are tried first
 bool MazeSolver::parallelDFS(int x, int y, bool& found, int depth) {
-    bool stopSearch = false;
+    // Early termination: another thread already found the exit
+    if (found) return true;
 
-    // check the shared found flag 
-    #pragma omp critical(found_lock)
-    {
-        stopSearch = found;
-    }
-
-    if (stopSearch) {
-        return true;
-    }
-
-    //visit current cell
+    // Try to claim this cell atomically
     if (!tryVisitCell(x, y)) {
         return false;
     }
 
-    // if the exit is reached, update the shared found flag
+    // Check if we reached the exit
     if (x == endX && y == endY) {
         #pragma omp critical(found_lock)
         {
             found = true;
         }
-
-        maze[x][y] = 2;
+        maze[y][x] = 2;
         return true;
     }
 
-    /*
+    // Step 1: Get valid neighboring cells (Medine's parallel candidates)
+    std::vector<SearchNode> candidates = getParallelCandidates(x, y, depth);
 
-    Planned flow:
-
-    1. Medine's part:
-       vector<SearchNode> candidates = getParallelCandidates(x, y, depth);
-
-    2. Kubra's part:
-       candidates = orderCandidatesByWeight(candidates);
-
-    3. My part:
-       Create OpenMP tasks for candidate branches.
-
-    ex:
-    vector<SearchNode> candidates = getParallelCandidates(x, y, depth);
+    // Step 2: Sort by quantum-inspired weights (Kubra's quantum ordering)
+    // Most promising paths (closer to exit) are explored first
     candidates = orderCandidatesByWeight(candidates);
 
-    for (SearchNode node : candidates) {
+    // Step 3: Explore candidates with OpenMP tasks (Zulal's parallel engine)
+    for (const auto& node : candidates) {
+        if (found) break;
+
         if (shouldCreateTask(node.depth)) {
+            // Create a new OpenMP task for this branch
             #pragma omp task shared(found) firstprivate(node)
             {
-                parallelDFS(node.x, node.y, found, node.depth);
+                if (!found) {
+                    parallelDFS(node.x, node.y, found, node.depth);
+                }
             }
         } else {
+            // Continue sequentially within this task to avoid overhead
             parallelDFS(node.x, node.y, found, node.depth);
         }
     }
 
+    // Wait for all child tasks to complete before returning
     #pragma omp taskwait
-    */
 
     return found;
 }
